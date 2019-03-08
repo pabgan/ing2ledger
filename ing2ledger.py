@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import sys
-from xlrd import open_workbook
+from xlrd import open_workbook, xldate_as_tuple
+from datetime import datetime
 
+#################################################################
+# Auxiliary bits
 class movement(object):
     fechavalor = None
     categoria = None
@@ -22,13 +25,17 @@ class movement(object):
         self.importe = importe
         self.saldo = saldo
 
-
+#################################################################
+# 1. Check arguments
+# TODO: Use argument parser
 if len(sys.argv) != 2:
     print("Usage is: ing2ledger input.xls")
     exit(1)
 
 ingfile = sys.argv[1]
 
+#################################################################
+# 2. Parse input document
 # Constants referring where specific information is inside the xls file
 coord_numerocuenta = (1,3)
 coord_fechaexportacion = (3,3)
@@ -52,7 +59,7 @@ numerocuenta = sheet.cell(*coord_numerocuenta).value
 listofmovements = list()
 for row in range(row_firstmovement, sheet.nrows):
     listofmovements.append(movement(
-                                    sheet.cell(row, col_fechavalor).value,
+                                    datetime(*xldate_as_tuple(sheet.cell(row, col_fechavalor).value, 0)),
                                     sheet.cell(row, col_categoria).value,
                                     sheet.cell(row, col_subcategoria).value,
                                     sheet.cell(row, col_descripcion).value,
@@ -61,5 +68,18 @@ for row in range(row_firstmovement, sheet.nrows):
                                     sheet.cell(row, col_importe).value,
                                     sheet.cell(row, col_saldo).value))
 
+#################################################################
+# TODO: 3. Identify last movement in common, that is, the last movement
+#    that was written in the log file
 for movement in listofmovements:
-    print(movement.importe)
+    # Separate each movement with a blank line
+    print("\n")
+    print("%s/%s/%s  %s" % (movement.fechavalor.year, movement.fechavalor.month, movement.fechavalor.day, movement.descripcion))
+    if movement.comentario is not None and len(movement.comentario) != 0:
+        print("\t;%s" % (movement.comentario))
+    if movement.importe < 0:
+        print("\tGastos:%s:%s\t\t€%s" %(movement.categoria, movement.subcategoria, movement.importe))
+        print("\tAssets:Checking:Pablo")
+    else:
+        print("\tAssets:Checking:Pablo\t\t€%s" % (movement.importe))
+        print("\t???")
