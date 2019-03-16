@@ -71,9 +71,9 @@ for row in range(row_firstmovement, sheet.nrows):
 #################################################################
 # TODO: 3. Identify last movement in common, that is, the last movement
 #    that was written in the log file
-for movement in listofmovements:
+for movement in listofmovements[::-1]:
     # Separate each movement with a blank line
-    print("\n")
+    print("")
     print("%s/%s/%s  %s" % (movement.fechavalor.year, movement.fechavalor.month, movement.fechavalor.day, movement.descripcion))
     if movement.comentario is not None and len(movement.comentario) != 0:
         print("\t;%s" % (movement.comentario))
@@ -82,4 +82,10 @@ for movement in listofmovements:
         print("\tAssets:Checking:Pablo")
     else:
         print("\tAssets:Checking:Pablo\t\t€%s" % (movement.importe))
-        print("\t???")
+
+        if movement.descripcion == "Nomina recibida Assia Ela, S.L.U.":
+            print("\tIngresos:Nómina")
+        elif movement.descripcion.find("Incentivo por compra TWYP") >= 0 or movement.descripcion.find("Abono por campaña Abono Shopping") >= 0:
+            print("\tIngresos:ING")
+        else:
+            print("\t???")
