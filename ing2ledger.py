@@ -78,10 +78,10 @@ for movement in listofmovements[::-1]:
     if movement.comentario is not None and len(movement.comentario) != 0:
         print("\t;%s" % (movement.comentario))
     if movement.importe < 0:
-        print("\tGastos:%s:%s\t\t€%s" %(movement.categoria, movement.subcategoria, movement.importe))
-        print("\tAssets:Checking:Pablo")
+        print("\tGastos:%s:%s\t\t€%s" %(movement.categoria, movement.subcategoria, abs(movement.importe)))
+        print("\tActivos:Cuentas:Pablo")
     else:
-        print("\tAssets:Checking:Pablo\t\t€%s" % (movement.importe))
+        print("\tActivos:Cuentas:Pablo\t\t€%s" % (movement.importe))
 
         if movement.descripcion == "Nomina recibida Assia Ela, S.L.U.":
             print("\tIngresos:Nómina")
