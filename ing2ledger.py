@@ -6,31 +6,31 @@ from datetime import datetime
 #################################################################
 # Auxiliary bits
 class movement(object):
-    fechavalor = None
-    categoria = None
-    subcategoria = None
-    descripcion = None
-    comentario = None
-    imagen = None
-    importe = None
-    saldo = None
-    
-    def __init__(self,fechavalor,categoria,subcategoria,descripcion,comentario,imagen,importe,saldo):
-        self.fechavalor = fechavalor
-        self.categoria = categoria
-        self.subcategoria = subcategoria
-        self.descripcion = descripcion
-        self.comentario = comentario
-        self.imagen = imagen
-        self.importe = importe
-        self.saldo = saldo
+	fechavalor = None
+	categoria = None
+	subcategoria = None
+	descripcion = None
+	comentario = None
+	imagen = None
+	importe = None
+	saldo = None
+	
+	def __init__(self,fechavalor,categoria,subcategoria,descripcion,comentario,imagen,importe,saldo):
+		self.fechavalor = fechavalor
+		self.categoria = categoria
+		self.subcategoria = subcategoria
+		self.descripcion = descripcion
+		self.comentario = comentario
+		self.imagen = imagen
+		self.importe = importe
+		self.saldo = saldo
 
 #################################################################
 # 1. Check arguments
 # TODO: Use argument parser
 if len(sys.argv) != 2:
-    print("Usage is: ing2ledger input.xls")
-    exit(1)
+	print("Usage is: ing2ledger input.xls")
+	exit(1)
 
 ingfile = sys.argv[1]
 
@@ -58,34 +58,33 @@ numerocuenta = sheet.cell(*coord_numerocuenta).value
 
 listofmovements = list()
 for row in range(row_firstmovement, sheet.nrows):
-    listofmovements.append(movement(
-                                    datetime(*xldate_as_tuple(sheet.cell(row, col_fechavalor).value, 0)),
-                                    sheet.cell(row, col_categoria).value,
-                                    sheet.cell(row, col_subcategoria).value,
-                                    sheet.cell(row, col_descripcion).value,
-                                    sheet.cell(row, col_comentario).value,
-                                    sheet.cell(row, col_imagen).value,
-                                    sheet.cell(row, col_importe).value,
-                                    sheet.cell(row, col_saldo).value))
+	listofmovements.append(movement(
+									datetime(*xldate_as_tuple(sheet.cell(row, col_fechavalor).value, 0)),
+									sheet.cell(row, col_categoria).value,
+									sheet.cell(row, col_subcategoria).value,
+									sheet.cell(row, col_descripcion).value,
+									sheet.cell(row, col_comentario).value,
+									sheet.cell(row, col_imagen).value,
+									sheet.cell(row, col_importe).value,
+									sheet.cell(row, col_saldo).value))
 
 #################################################################
-# TODO: 3. Identify last movement in common, that is, the last movement
-#    that was written in the log file
+# 3. Translate every line in a ledger transaction
 for movement in listofmovements[::-1]:
-    # Separate each movement with a blank line
-    print("")
-    print("%s/%s/%s  %s" % (movement.fechavalor.year, movement.fechavalor.month, movement.fechavalor.day, movement.descripcion))
-    if movement.comentario is not None and len(movement.comentario) != 0:
-        print("\t;%s" % (movement.comentario))
-    if movement.importe < 0:
-        print("\tGastos:%s:%s\t\t€%s" %(movement.categoria, movement.subcategoria, abs(movement.importe)))
-        print("\tActivos:Cuentas:Pablo")
-    else:
-        print("\tActivos:Cuentas:Pablo\t\t€%s" % (movement.importe))
+	# Separate each movement with a blank line
+	print("")
+	print("%s/%s/%s  %s" % (movement.fechavalor.year, movement.fechavalor.month, movement.fechavalor.day, movement.descripcion))
+	if movement.comentario is not None and len(movement.comentario) != 0:
+		print("\t;%s" % (movement.comentario))
+	if movement.importe < 0:
+		print("\tGastos:%s:%s\t\t€%s" %(movement.categoria, movement.subcategoria, abs(movement.importe)))
+		print("\tActivos:Cuentas:Pablo")
+	else:
+		print("\tActivos:Cuentas:Pablo\t\t€%s" % (movement.importe))
 
-        if movement.descripcion == "Nomina recibida Assia Ela, S.L.U.":
-            print("\tIngresos:Nómina")
-        elif movement.descripcion.find("Incentivo por compra TWYP") >= 0 or movement.descripcion.find("Abono por campaña Abono Shopping") >= 0:
-            print("\tIngresos:ING")
-        else:
-            print("\t???")
+		if movement.descripcion == "Nomina recibida Assia Ela, S.L.U.":
+			print("\tIngresos:Nómina")
+		elif movement.descripcion.find("Incentivo por compra TWYP") >= 0 or movement.descripcion.find("Abono por campaña Abono Shopping") >= 0:
+			print("\tIngresos:ING")
+		else:
+			print("\t???")
