@@ -13,25 +13,25 @@ comentario = 'comentario'
 importe = 'importe'
 fieldnames=(fechavalor, categoria, subcategoria, descripcion, comentario, importe)
 
-class movement(object):
-    fechavalor = None
-    categoria = None
-    subcategoria = None
-    descripcion = None
-    comentario = None
-    imagen = None
-    importe = None
-    saldo = None
-    
-    def __init__(self,fechavalor,categoria,subcategoria,descripcion,comentario,imagen,importe,saldo):
-        self.fechavalor = fechavalor
-        self.categoria = categoria
-        self.subcategoria = subcategoria
-        self.descripcion = descripcion
-        self.comentario = comentario
-        self.imagen = imagen
-        self.importe = importe
-        self.saldo = saldo
+#class movement(object):
+#    fechavalor = None
+#    categoria = None
+#    subcategoria = None
+#    descripcion = None
+#    comentario = None
+#    imagen = None
+#    importe = None
+#    saldo = None
+#    
+#    def __init__(self,fechavalor,categoria,subcategoria,descripcion,comentario,imagen,importe,saldo):
+#        self.fechavalor = fechavalor
+#        self.categoria = categoria
+#        self.subcategoria = subcategoria
+#        self.descripcion = descripcion
+#        self.comentario = comentario
+#        self.imagen = imagen
+#        self.importe = importe
+#        self.saldo = saldo
 
 #################################################################
 # 1. Check arguments
@@ -44,7 +44,6 @@ ingfile = sys.argv[1]
 
 #################################################################
 # 2. Parse input document
-# Constants referring where specific information is inside the xls file
 with open(ingfile) as csvfile:
     # First we extract metadata
     ingfile_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
