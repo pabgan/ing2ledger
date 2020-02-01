@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
 import sys
-from xlrd import open_workbook, xldate_as_tuple
+import csv
 from datetime import datetime
 
 #################################################################
 # Auxiliary bits
+fechavalor = 'fechavalor'
+categoria = 'categoria'
+subcategoria = 'subcategoria'
+descripcion = 'descripcion'
+comentario = 'comentario'
+importe = 'importe'
+fieldnames=(fechavalor, categoria, subcategoria, descripcion, comentario, importe)
+
 class movement(object):
     fechavalor = None
     categoria = None
@@ -29,7 +37,7 @@ class movement(object):
 # 1. Check arguments
 # TODO: Use argument parser
 if len(sys.argv) != 2:
-    print("Usage is: ing2ledger input.xls")
+    print("Usage is: ing2ledger input.csv")
     exit(1)
 
 ingfile = sys.argv[1]
@@ -37,54 +45,48 @@ ingfile = sys.argv[1]
 #################################################################
 # 2. Parse input document
 # Constants referring where specific information is inside the xls file
-coord_numerocuenta = (1,3)
-coord_fechaexportacion = (3,3)
+with open(ingfile) as csvfile:
+    # First we extract metadata
+    ingfile_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
+    print(';;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;')
+    print('; Fichero importado: ' + ingfile)
+    numero_de_cuenta = next(ingfile_reader)[3]
+    print('; Número de cuenta: ' + numero_de_cuenta)
+    titular = next(ingfile_reader)[3]
+    print('; Titular: ' + titular)
+    fecha_exportación = next(ingfile_reader)[3]
+    print('; Fecha de exportación: ' + fecha_exportación)
 
-row_firstmovement = 6
-col_fechavalor = 0
-col_categoria = 1
-col_subcategoria = 2
-col_descripcion = 3
-col_comentario = 4
-col_imagen = 5
-col_importe = 6
-col_saldo = 7
+    # Then we go with the data
+    ingfile_reader = csv.DictReader(csvfile, delimiter=',', quotechar='"', fieldnames=fieldnames)
+    # Dismiss empty line
+    next(ingfile_reader)
+    # Dismiss column names
+    next(ingfile_reader)
 
-# Open the file
-book = open_workbook(ingfile)
-sheet = book.sheet_by_index(0)
-
-numerocuenta = sheet.cell(*coord_numerocuenta).value
-
-listofmovements = list()
-for row in range(row_firstmovement, sheet.nrows):
-    listofmovements.append(movement(
-                    datetime(*xldate_as_tuple(sheet.cell(row, col_fechavalor).value, 0)),
-                    sheet.cell(row, col_categoria).value,
-                    sheet.cell(row, col_subcategoria).value,
-                    sheet.cell(row, col_descripcion).value,
-                    sheet.cell(row, col_comentario).value,
-                    sheet.cell(row, col_imagen).value,
-                    sheet.cell(row, col_importe).value,
-                    sheet.cell(row, col_saldo).value))
-
-#################################################################
-# 3. Translate every line in a ledger transaction
-for movement in listofmovements[::-1]:
-    # Separate each movement with a blank line
-    print("")
-    print("%s/%s/%s  %s" % (movement.fechavalor.year, movement.fechavalor.month, movement.fechavalor.day, movement.descripcion))
-    if movement.comentario is not None and len(movement.comentario) != 0:
-        print("\t;%s" % (movement.comentario))
-    if movement.importe < 0:
-        print("\tGastos:%s:%s\t\t€%s" %(movement.categoria, movement.subcategoria, abs(movement.importe)))
-        print("\tActivos:Cuentas:Pablo")
-    else:
-        print("\tActivos:Cuentas:Pablo\t\t€%s" % (movement.importe))
-
-        if movement.descripcion == "Nomina recibida Assia Ela, S.L.U.":
-            print("\tIngresos:Nómina")
-        elif movement.descripcion.find("Incentivo por compra TWYP") >= 0 or movement.descripcion.find("Abono por campaña Abono Shopping") >= 0:
-            print("\tIngresos:ING")
+##################################################################
+## 3. Translate every line in a ledger transaction
+    for movement in ingfile_reader:
+        if movement[fechavalor] is None or len(movement[fechavalor]) == 0 or movement[importe] is None or len(movement[importe]) == 0:
+            # unuseful line
+            continue
+        # Separate each movement with a blank line
+        print("")
+        #print("%s/%s/%s  %s" % (movement.fechavalor.year, movement.fechavalor.month, movement.fechavalor.day, movement.descripcion))
+        fecha = movement[fechavalor].split('/')
+        print("%s/%s/%s %s" % (fecha[2], fecha[1], fecha[0], movement[descripcion]))
+        if movement[comentario] is not None and len(movement[comentario]) != 0:
+            print("\t;%s" % (movement[comentario]))
+        movement[importe] = movement[importe].replace(',','.')
+        if float(movement[importe]) < 0:
+            print("\tGastos:%s:%s\t\t€%s" %(movement[categoria], movement[subcategoria], abs(float(movement[importe]))))
+            print("\tActivos:Cuentas:Pablo")
         else:
-            print("\t???")
+            print("\tActivos:Cuentas:Pablo\t\t€%s" % (movement[importe]))
+    
+            if movement[descripcion] == "Nomina recibida Assia Ela, S.L.U.":
+                print("\tIngresos:Nómina")
+            elif movement[descripcion].find("Incentivo por compra TWYP") >= 0 or movement[descripcion].find("Abono por campaña Abono Shopping") >= 0:
+                print("\tIngresos:ING")
+            else:
+                print("\t???")
