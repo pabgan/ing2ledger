@@ -1,49 +1,79 @@
 #!/usr/bin/env python3
-import sys
+import sys, argparse
 import csv
 from datetime import datetime
 
+debugging = False
+
+if debugging:
+    print()
+    print()
+    print()
+    print('=======================================')
+    print('======= EMPEZAMOS =====================')
+    print('=======================================')
+
 #################################################################
 # Auxiliary bits
-fechavalor = 'fechavalor'
-categoria = 'categoria'
-subcategoria = 'subcategoria'
-descripcion = 'descripcion'
-comentario = 'comentario'
-importe = 'importe'
-fieldnames=(fechavalor, categoria, subcategoria, descripcion, comentario, importe)
+date = 'fechavalor'
+category = 'categoria'
+subcategory = 'subcategoria'
+description = 'descripcion'
+comment = 'comentario'
+amount = 'importe'
+fieldnames=(date, category, subcategory, description, comment, amount)
 
-#class movement(object):
-#    fechavalor = None
-#    categoria = None
-#    subcategoria = None
-#    descripcion = None
-#    comentario = None
+#class transaction(object):
+#    date = None
+#    category = None
+#    subcategory = None
+#    description = None
+#    comment = None
 #    imagen = None
-#    importe = None
+#    amount = None
 #    saldo = None
 #    
-#    def __init__(self,fechavalor,categoria,subcategoria,descripcion,comentario,imagen,importe,saldo):
-#        self.fechavalor = fechavalor
-#        self.categoria = categoria
-#        self.subcategoria = subcategoria
-#        self.descripcion = descripcion
-#        self.comentario = comentario
+#    def __init__(self,date,category,subcategory,description,comment,imagen,amount,saldo):
+#        self.date = date
+#        self.category = category
+#        self.subcategory = subcategory
+#        self.description = description
+#        self.comment = comment
 #        self.imagen = imagen
-#        self.importe = importe
+#        self.amount = amount
 #        self.saldo = saldo
 
 #################################################################
 # 1. Check arguments
-# TODO: Use argument parser
-if len(sys.argv) != 2:
-    print("Usage is: ing2ledger input.csv")
-    exit(1)
+if __name__ == "__main__":
+    # TODO: Better description
+    desc='''
+Oh yeah
+'''
 
-ingfile = sys.argv[1]
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument("-a", "--accountscfg", help="Config file associating transaction descriptions with accounts.", type=str, default='Accounts.csv', required=False)
+    args = parser.parse_args(sys.argv[1:-1])
+    ingfile = sys.argv[-1]
+    
 
 #################################################################
-# 2. Parse input document
+# 2. Parse accounts config into a dictionary
+accounts_dict = dict()
+with open(args.accountscfg) as acf:
+    acf_reader = csv.reader(acf, delimiter=';', quotechar='"')
+    
+    # Dismiss title line
+    next(acf_reader)
+    for row in acf_reader:
+        # description;debit_account;credit_account;tag
+        accounts_dict[row[0]] = (row[1], row[2], row[3])
+
+if debugging:
+    print(accounts_dict)
+
+#################################################################
+# 3. Parse input document
 with open(ingfile) as csvfile:
     # First we extract metadata
     ingfile_reader = csv.reader(csvfile, delimiter=',', quotechar='"')
@@ -64,28 +94,36 @@ with open(ingfile) as csvfile:
     next(ingfile_reader)
 
 ##################################################################
-## 3. Translate every line in a ledger transaction
-    for movement in ingfile_reader:
-        if movement[fechavalor] is None or len(movement[fechavalor]) == 0 or movement[importe] is None or len(movement[importe]) == 0:
+## 4. Translate every line in a ledger transaction
+    for transaction in ingfile_reader:
+        if debugging:
+            print()
+            print('---------------------------------------')
+            print('Processing line \'%s\'' % transaction)
+            print('---------------------------------------')
+
+        if transaction[date] is None or len(transaction[date]) == 0 or transaction[amount] is None or len(transaction[amount]) == 0:
             # unuseful line
+            print()
+            print('WARNING - Ignoring line: %s' % (transaction))
             continue
-        # Separate each movement with a blank line
+
+        # 4.1 Separate each transaction with a blank line
         print("")
-        #print("%s/%s/%s  %s" % (movement.fechavalor.year, movement.fechavalor.month, movement.fechavalor.day, movement.descripcion))
-        fecha = movement[fechavalor].split('/')
-        print("%s/%s/%s %s" % (fecha[2], fecha[1], fecha[0], movement[descripcion]))
-        if movement[comentario] is not None and len(movement[comentario]) != 0:
-            print("\t;%s" % (movement[comentario]))
-        movement[importe] = movement[importe].replace(',','.')
-        if float(movement[importe]) < 0:
-            print("\tGastos:%s:%s\t\t€%s" %(movement[categoria], movement[subcategoria], abs(float(movement[importe]))))
-            print("\tActivos:Cuentas:Pablo")
+
+        # 4.2 Print date and description
+        fecha = transaction[date].split('/')
+        print("%s/%s/%s %s" % (fecha[2], fecha[1], fecha[0], transaction[description]))
+
+        # 4.3 Print comment if there was any for this transaction
+        if transaction[comment] is not None and len(transaction[comment]) != 0:
+            print("\t;%s" % (transaction[comment]))
+
+        # 4.4 Print credit account and ammount
+        if transaction[description] in accounts_dict:
+            print ("\t%s\t\t%s ; %s" % (accounts_dict[transaction[description]][1], transaction[amount], accounts_dict[transaction[description]][2]))
+            print("\t%s" % accounts_dict[transaction[description]][0])
         else:
-            print("\tActivos:Cuentas:Pablo\t\t€%s" % (movement[importe]))
-    
-            if movement[descripcion] == "Nomina recibida Assia Ela, S.L.U.":
-                print("\tIngresos:Nómina")
-            elif movement[descripcion].find("Incentivo por compra TWYP") >= 0 or movement[descripcion].find("Abono por campaña Abono Shopping") >= 0:
-                print("\tIngresos:ING")
-            else:
-                print("\t???")
+            print("\t; This transaction is not configured")
+            print("\tGastos:%s:%s\t\t€%s" %(transaction[category], transaction[subcategory], transaction[amount]))
+            print("\tActivos:Cuentas:Pablo")
