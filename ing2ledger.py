@@ -121,7 +121,10 @@ with open(ingfile) as csvfile:
 
         # 4.4 Print credit account and ammount
         if transaction[description] in accounts_dict:
-            print ("\t%s\t\t%s ; %s" % (accounts_dict[transaction[description]][1], transaction[amount], accounts_dict[transaction[description]][2]))
+            if  accounts_dict[transaction[description]][2] != '':
+                print ("\t%s\t\t%s ; %s" % (accounts_dict[transaction[description]][1], transaction[amount], accounts_dict[transaction[description]][2]))
+            else:
+                print ("\t%s\t\t%s" % (accounts_dict[transaction[description]][1], transaction[amount]))
             print("\t%s" % accounts_dict[transaction[description]][0])
         else:
             print("\t; This transaction is not configured")
